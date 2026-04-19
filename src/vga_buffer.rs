@@ -76,6 +76,30 @@ impl Writer {
         }
     }
 
+    fn backspace(&mut self) {
+        if self.column_position > 0 {
+            self.column_position -= 1;
+            let row = BUFFER_HEIGHT - 1;
+            let col = self.column_position;
+            self.buffer.chars[row][col].write(ScreenChar {
+                ascii_character: b' ',
+                color_code: self.color_code,
+            });
+        }
+    }
+    fn ctrl_backspace(&mut self) {
+        let row = BUFFER_HEIGHT - 1;
+        let mut col = self.column_position;
+        if self.buffer.chars[row as usize][col].read().ascii_character == 0x20 {
+            self.backspace();
+            col -= 1;
+        }
+        while self.column_position > 0 && self.buffer.chars[row as usize][col - 1].read().ascii_character != 0x20  {
+            self.backspace();
+            col -= 1;
+        }
+    }
+
     fn new_line(&mut self) {
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
@@ -155,4 +179,12 @@ macro_rules! println {
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap();
+}
+
+pub fn backspace() {
+    WRITER.lock().backspace();
+}
+
+pub fn ctrl_backspace() {
+    WRITER.lock().ctrl_backspace();
 }

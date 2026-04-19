@@ -3,6 +3,8 @@
 use core::arch::asm;
 use core::panic::PanicInfo;
 
+use crate::vga_buffer::{backspace, ctrl_backspace};
+
 // This function is called on panic.
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -39,6 +41,9 @@ pub extern "C" fn _start() -> ! {
                         0x1d | 0xe0 => is_ctrl = false,
                         0x3a | 0x38 => is_alt = false,
                         0x2a | 0x36 => is_shift = false,
+                        28 => println!(""),
+                        0x0e if is_ctrl => ctrl_backspace(),
+                        0x0e => backspace(),
                         _ => {
                             let key = if is_shift { SHIFT_COLEMAK_MAP[(make_code - 1) as usize] } else { COLEMAK_MAP[(make_code - 1) as usize] };
                             print!("{}", key);
