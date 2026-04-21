@@ -1,3 +1,4 @@
+use core::ops::Add;
 use crate::{
     print, println,
     vga_buffer::{backspace, ctrl_backspace},
@@ -48,7 +49,6 @@ lazy_static! {
             .set_handler_fn(keyboard_interrupt_handler);
         idt[InterruptIndex::Timer.as_u8()]
             .set_handler_fn(timer_interrupt_handler); // new
-        idt[InterruptIndex::Mouse.as_u8()].set_handler_fn(mouse_interrupt_handler);
         idt
     };
 }
@@ -139,31 +139,3 @@ static SHIFT_COLEMAK_MAP: [&str; 59] = [
     "K", "M", "<", ">", "?", "RShift", "Super", "LAlt", " ", /* Space */
     "RAlt", "Caps",
 ];
-
-// Store the state of the current packet
-static MOUSE_STATE: spin::Mutex<MouseState> = spin::Mutex::new(MouseState {
-    phase: 0,
-    buffer: [0; 3],
-});
-
-struct MouseState {
-    phase: u8,
-    buffer: [u8; 3],
-}
-
-extern "x86-interrupt" fn mouse_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    let port = 0x60;
-    let packet_byte: u8 = unsafe { inb(port) };
-
-
-    // Basic logic: You'd typically push this byte into a static buffer
-    // until you have 3 bytes, then process the movement.
-    // print!("m");
-    let mut current_mouse_state = MOUSE_STATE.lock();
-    current_mouse_state.buffer[current_mouse_state.phase] = packet_byte;
-    current_mouse_state.phase = (current_mouse_state.phase + 1) % 3;
-    unsafe {
-        PICS.lock()
-            .notify_end_of_interrupt(InterruptIndex::Mouse.as_u8());
-    }
-}
