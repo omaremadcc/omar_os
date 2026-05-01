@@ -16,7 +16,10 @@ pub extern "C" fn _start() -> ! {
 
     blog_os::init();
 
-    println!("Omar emad");
+
+    let ptr = 0xdeadbeaf as *mut u8;
+    unsafe { *ptr = 42; }
+
 
     blog_os::hlt_loop();
 }
