@@ -1,5 +1,11 @@
 use core::alloc::{GlobalAlloc, Layout};
 
+
+
+struct FreeList {
+
+}
+
 struct Alloc;
 
 unsafe impl GlobalAlloc for Alloc {
@@ -12,7 +18,8 @@ unsafe impl GlobalAlloc for Alloc {
     }
 }
 
-#[global_allocator]
+
+// #[global_allocator]
 static ALLOC: Alloc = Alloc {};
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
@@ -23,6 +30,13 @@ use x86_64::structures::paging::{Page, PageTableFlags, Size4KiB, FrameAllocator,
 use x86_64::structures::paging::mapper::MapToError;
 use x86_64::VirtAddr;
 
+use crate::println;
+
+
+use linked_list_allocator::LockedHeap;
+
+#[global_allocator]
+static ALLOCATOR: LockedHeap = LockedHeap::empty();
 pub fn init_heap(
     mapper: &mut impl Mapper<Size4KiB>,
     frame_allocator: &mut impl FrameAllocator<Size4KiB>,
@@ -36,11 +50,17 @@ pub fn init_heap(
 
     };
 
+
     for page in page_range {
         let frame = frame_allocator.allocate_frame().ok_or(MapToError::FrameAllocationFailed)?;
         let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
         unsafe { mapper.map_to(page, frame, flags, frame_allocator) }?.flush();
     };
+
+    // new
+    unsafe {
+        ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE);
+    }
 
     Ok(())
 }
