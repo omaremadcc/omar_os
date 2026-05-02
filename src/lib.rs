@@ -1,9 +1,11 @@
 #![feature(abi_x86_interrupt)]
 #![no_std]
+
+use crate::allocator::init_heap;
 pub mod interrupts;
 pub mod vga_buffer;
 pub mod memory;
-
+pub mod allocator;
 
 pub fn init() {
     use crate::interrupts;
@@ -16,3 +18,5 @@ pub fn hlt_loop() -> ! {
         x86_64::instructions::hlt();
     }
 }
+
+extern crate alloc;
