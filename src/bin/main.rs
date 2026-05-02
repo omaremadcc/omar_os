@@ -15,28 +15,22 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use x86_64::VirtAddr;
-    use x86_64::structures::paging::{PageTable, Translate};
+    use x86_64::structures::paging::{PageTable, Translate, Page};
     use blog_os::memory;
     blog_os::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator = unsafe {
+        memory::BootInfoFrameAllocator::new(&boot_info.memory_map)
+    };
 
-    let addresses = [
-        // the identity-mapped vga buffer page
-        0xb8000,
-        // some code page
-        0x201008,
-        // some stack page
-        0x0100_0020_1a10,
-        // virtual address mapped to physical address 0
-        boot_info.physical_memory_offset,
-    ];
+    let page = Page::containing_address(VirtAddr::new(0xdeadbeaf000));
+    memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
+    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e) };
 
-    for &address in &addresses {
-        let virt = VirtAddr::new(address);
-        let phys = unsafe { mapper.translate_addr(virt) };
-        println!("{:?} -> {:?}", virt, phys);
-    }    println!("It did not crash!");
+    println!("It did not crash!");
+
     blog_os::hlt_loop();
 }
