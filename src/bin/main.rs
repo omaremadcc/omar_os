@@ -16,17 +16,14 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use x86_64::VirtAddr;
-    use x86_64::structures::paging::{PageTable, Translate, Page};
     use blog_os::memory;
     blog_os::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    let mut frame_allocator = unsafe {
-        memory::BootInfoFrameAllocator::new(&boot_info.memory_map)
-    };
+    let mut frame_allocator = memory::BootInfoFrameAllocator::new(&boot_info.memory_map);
 
-    init_heap(&mut mapper, &mut frame_allocator);
+    let _ = init_heap(&mut mapper, &mut frame_allocator);
     use alloc::boxed::Box;
     use alloc::{vec, vec::{Vec}};
     // allocate a number on the heap
@@ -34,7 +31,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("heap_value at {:p}", heap_value);
 
     // create a dynamically sized vector
-    let mut vec = Vec::new();
+    let mut vec: Vec<i32> = Vec::new();
     for i in 0..500 {
         vec.push(i);
     }
