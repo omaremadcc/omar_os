@@ -35,9 +35,9 @@ impl InterruptIndex {
         self as u8
     }
 
-    fn as_usize(self) -> usize {
-        usize::from(self.as_u8())
-    }
+    // fn as_usize(self) -> usize {
+    //     usize::from(self.as_u8())
+    // }
 }
 
 lazy_static! {
@@ -137,9 +137,9 @@ pub fn inb(port: u16) -> u8 {
 fn get_make_code(break_code: u8) -> u8 {
     break_code & 0x7F // Clears the 7th bit
 }
-fn get_break_code(make_code: u8) -> u8 {
-    make_code | 0x80 // Sets the 7th bit
-}
+// fn get_break_code(make_code: u8) -> u8 {
+//     make_code | 0x80 // Sets the 7th bit
+// }
 static COLEMAK_MAP: [&str; 59] = [
     "Esc", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", r"\b", /* backspace */
     r"\t", "q", "w", "f", "p", "g", "j", "l", "u", "y", ";", "[", "]", r"\n", "LCtrl", "a", "r",

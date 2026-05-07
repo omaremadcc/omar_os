@@ -39,6 +39,14 @@ pub fn create_example_mapping(
     map_to_result.unwrap().flush()
 }
 
+pub struct EmptyFrameAllocator;
+
+unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+        None
+    }
+}
+
 pub struct BootInfoFrameAllocator {
     memory_map: &'static MemoryMap,
     next: usize,
