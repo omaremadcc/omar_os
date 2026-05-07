@@ -2,6 +2,15 @@ use core::alloc::{GlobalAlloc, Layout};
 use core::{mem, ptr};
 use spin::Mutex;
 
+struct FreeListNode {
+    size: usize,
+    next: Option<*mut FreeListNode>,
+}
+impl FreeListNode {
+    pub fn from_data_ptr(data_ptr: *mut FreeListNode) -> Self {
+        unsafe { core::ptr::read(data_ptr) }
+    }
+}
 
 struct Alloc {
     inner_heap: Mutex<InnerHeap>,
@@ -16,7 +25,7 @@ unsafe impl Sync for InnerHeap {}
 
 unsafe impl GlobalAlloc for Alloc {
     unsafe fn alloc(&self, size: Layout) -> *mut u8 {
-        // println!("Allocating");
+            // println!("Allocating");
         let mut heap = self.inner_heap.lock();
         let requested_size = ((size.size() + 7) & !7) + mem::size_of::<FreeListNode>();
         let min_split_size = requested_size + mem::size_of::<FreeListNode>();
@@ -71,34 +80,8 @@ unsafe impl GlobalAlloc for Alloc {
         }
     }
 
-    unsafe fn dealloc(&self, ptr: *mut u8, size: Layout) {
-        println!(
-            "Looking like some mf want to dealloc, with size {}",
-            size.size()
-        );
-        let mut heap = self.inner_heap.lock();
-        let mut ptr = ptr as usize - mem::size_of::<FreeListNode>();
-        let mut ptr = ptr as *mut FreeListNode;
-        let node: FreeListNode = unsafe { *ptr };
-        let mut current = heap.head;
-        while let Some(node) = current {
-            let node: FreeListNode = unsafe { *node };
-            if let Some(next) = node.next {
-                if next > (ptr as *mut FreeListNode) {
-                    break;
-                }
-            }
-            current = node.next as Option<*mut FreeListNode>;
-        }
-        let current_node: FreeListNode = unsafe { *(current.unwrap()) };
-        current_node.next = Some(ptr as *mut FreeListNode);
-        let new_node = FreeListNode {
-            size: size.size(),
-            next: node.next,
-        };
-        unsafe {
-            ptr::write(ptr as *mut FreeListNode, new_node);
-        }
+    unsafe fn dealloc(&self, _ptr: *mut u8, _size: Layout) {
+        println!("Looking like some mf want to dealloc");
     }
 }
 
